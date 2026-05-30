@@ -59,3 +59,46 @@ async def system_health_check():
         "database": "connected",
         "version": "1.0.0"
     }
+
+# 6. Database Diagnostics Debug Endpoint
+@app.get("/api/debug-db")
+async def debug_database_connection():
+    """Debug endpoint to diagnose database connection and schema issues in production."""
+    import re
+    import traceback
+    from sqlalchemy import text
+    from app.core.database import AsyncSessionLocal
+    
+    db_url = settings.DATABASE_URL
+    # Mask password for security
+    masked_url = re.sub(r":([^@]+)@", ":****@", db_url) if "@" in db_url else db_url
+    
+    results = {
+        "database_url": masked_url,
+        "connection": "failed",
+        "tables_status": {},
+        "error": None,
+        "traceback": None
+    }
+    
+    try:
+        async with AsyncSessionLocal() as session:
+            # 1. Test basic connection
+            await session.execute(text("SELECT 1"))
+            results["connection"] = "successful"
+            
+            # 2. Check if tables exist
+            tables = ["users", "documents", "document_chunks", "conversations", "messages", "system_logs"]
+            for table in tables:
+                try:
+                    await session.execute(text(f"SELECT 1 FROM {table} LIMIT 1"))
+                    results["tables_status"][table] = "exists"
+                except Exception as e:
+                    results["tables_status"][table] = f"missing or error: {str(e)}"
+                    
+    except Exception as e:
+        results["error"] = str(e)
+        results["traceback"] = traceback.format_exc()
+        
+    return results
+
