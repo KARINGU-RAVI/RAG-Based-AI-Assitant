@@ -37,7 +37,6 @@ backend/uploads/
 storage/
 uploads/
 *.index
-*.json
 
 # Compilation Outputs & Bundlers
 dist/
