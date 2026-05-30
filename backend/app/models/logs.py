@@ -11,4 +11,4 @@ class SystemLog(Base):
     module: Mapped[str] = mapped_column(String(100), nullable=False)  # module name e.g., 'auth', 'rag', 'vectorstore'
     message: Mapped[str] = mapped_column(Text, nullable=False)
     details_json: Mapped[str] = mapped_column(Text, nullable=True)  # Detailed JSON payload as string
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
