@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -6,7 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import { 
   Sparkles, MessageSquare, Plus, Trash2, Shield, 
   FileText, UploadCloud, Send, LogOut, Sun, Moon, 
-  Activity, Star, ExternalLink, HelpCircle, CornerDownLeft, AlertCircle 
+  Activity, Star, ExternalLink, HelpCircle, CornerDownLeft 
 } from 'lucide-react';
 
 import { useAuthStore } from '../store/authStore';
@@ -192,7 +192,7 @@ export default function ChatPage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 

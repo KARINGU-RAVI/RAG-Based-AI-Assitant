@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, FileText, MessageSquare, ShieldAlert, Cpu, 
-  ArrowLeft, Search, RefreshCw, AlertTriangle, CheckCircle, Info, Database 
+  ArrowLeft, Search, RefreshCw, AlertTriangle, CheckCircle, Database 
 } from 'lucide-react';
 import { adminApi } from '../services/api';
 import { Analytics, SystemLog } from '../types';
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
                       const isExpanded = expandedLogId === log.id;
                       
                       return (
-                        <React.Fragment key={log.id}>
+                        <Fragment key={log.id}>
                           <tr 
                             onClick={() => log.details_json && setExpandedLogId(isExpanded ? null : log.id)}
                             className={`hover:bg-slate-100/20 dark:hover:bg-slate-800/20 transition-colors ${log.details_json ? 'cursor-pointer' : ''}`}
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
                               </tr>
                             )}
                           </AnimatePresence>
-                        </React.Fragment>
+                        </Fragment>
                       );
                     })
                   )}
