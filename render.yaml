@@ -1,0 +1,55 @@
+# ==============================================================================
+# Render Blueprint Specification File for RAG Chat Assistant
+# Link your GitHub repository and import this blueprint for one-click setup.
+# ==============================================================================
+services:
+  - type: web
+    name: rag-chat-backend
+    env: python
+    plan: free # Can be upgraded to paid for custom persistence
+    
+    # Target the backend subdirectory for builds
+    rootDir: backend
+    
+    # Compilation and run targets
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    
+    envVars:
+      # SQLite path inside storage directory (ideal for persistent disk mounts)
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./storage/rag_assistant.db
+        
+      # Placeholders for keys (Render will prompt you for these values securely)
+      - key: GEMINI_API_KEY
+        sync: false
+        
+      # Automatically generates a secure JWT secret key upon creation
+      - key: JWT_SECRET_KEY
+        generateValue: true
+        
+      # RAG & Ingestion parameters
+      - key: SIMILARITY_THRESHOLD
+        value: "0.60"
+      - key: TOP_K
+        value: "5"
+      - key: CHUNK_SIZE
+        value: "400"
+      - key: CHUNK_OVERLAP
+        value: "50"
+        
+      # Security thresholds
+      - key: RATE_LIMIT_CHAT_MAX_REQUESTS
+        value: "60"
+      - key: RATE_LIMIT_CHAT_WINDOW_SECONDS
+        value: "60"
+      - key: RATE_LIMIT_UPLOAD_MAX_REQUESTS
+        value: "10"
+      - key: RATE_LIMIT_UPLOAD_WINDOW_SECONDS
+        value: "60"
+
+    # Optional: Attach a persistent disk on Render paid tier to store vector index and DB files forever
+    # disk:
+    #   name: rag-storage
+    #   mountPath: /app/storage
+    #   sizeGB: 1
