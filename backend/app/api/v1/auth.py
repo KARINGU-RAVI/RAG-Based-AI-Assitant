@@ -17,45 +17,56 @@ router = APIRouter()
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     """Registers a new user. The first registered user is automatically promoted to 'admin'."""
-    # Check if username exists
-    username_result = await db.execute(select(User).filter(User.username == user_in.username))
-    if username_result.scalars().first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username is already registered"
+    import traceback
+    try:
+        # Check if username exists
+        username_result = await db.execute(select(User).filter(User.username == user_in.username))
+        if username_result.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username is already registered"
+            )
+            
+        # Check if email exists
+        email_result = await db.execute(select(User).filter(User.email == user_in.email))
+        if email_result.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already registered"
+            )
+            
+        # Check if this is the first user in the system to make them admin
+        total_users_result = await db.execute(select(User))
+        first_user = total_users_result.scalars().first() is None
+        role = "admin" if first_user else "user"
+        
+        # Hash password and create user
+        db_user = User(
+            username=user_in.username,
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            role=role,
+            is_active=True
         )
         
-    # Check if email exists
-    email_result = await db.execute(select(User).filter(User.email == user_in.email))
-    if email_result.scalars().first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already registered"
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+        
+        await SystemLogger.info(
+            db, "auth", f"User registered successfully: {db_user.username} (Role: {db_user.role})"
         )
         
-    # Check if this is the first user in the system to make them admin
-    total_users_result = await db.execute(select(User))
-    first_user = total_users_result.scalars().first() is None
-    role = "admin" if first_user else "user"
-    
-    # Hash password and create user
-    db_user = User(
-        username=user_in.username,
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
-        role=role,
-        is_active=True
-    )
-    
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-    
-    await SystemLogger.info(
-        db, "auth", f"User registered successfully: {db_user.username} (Role: {db_user.role})"
-    )
-    
-    return db_user
+        return db_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration database error: {str(e)}\nTraceback:\n{tb}"
+        )
+
 
 @router.post("/login", response_model=Token)
 async def login(
