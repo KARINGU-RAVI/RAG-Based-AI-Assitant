@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Root directory of the backend
@@ -12,6 +13,14 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./rag_assistant.db"
+    
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_url(cls, v: str) -> str:
+        """Automatically rewrites postgresql:// links to use the asyncpg driver prefix."""
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
     
     # JWT Authentication
     JWT_SECRET_KEY: str = "supersecretkeychangeinproduction1234567890!@#"
