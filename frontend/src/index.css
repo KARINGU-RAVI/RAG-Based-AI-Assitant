@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply transition-colors duration-300 font-sans antialiased text-slate-800 bg-slate-50 dark:text-slate-100 dark:bg-dark-bg;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Custom glassmorphism card styles */
+.glass-card {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+}
+
+.dark .glass-card {
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Custom premium scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Custom typing indicator animations */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  @apply bg-slate-400 dark:bg-slate-500 rounded-full inline-block mx-0.5;
+}
+
+.typing-dot:nth-child(1) {
+  animation: typing 1.4s infinite 0.1s;
+}
+.typing-dot:nth-child(2) {
+  animation: typing 1.4s infinite 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation: typing 1.4s infinite 0.3s;
+}

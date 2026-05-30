@@ -1,0 +1,54 @@
+# ==============================================================================
+# RAG Chat Assistant .gitignore
+# Prevents keys, dependencies, databases, and local assets from being pushed.
+# ==============================================================================
+
+# Private Configurations & API Keys
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+*.env
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+python/
+
+# Node.js Package Modules & Cache
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Relational Databases & SQLite Local Stores
+*.db
+*.db-journal
+*.sqlite
+rag_assistant.db
+
+# Vector Index Stores & Uploaded Manuals
+backend/storage/
+backend/uploads/
+storage/
+uploads/
+*.index
+*.json
+
+# Compilation Outputs & Bundlers
+dist/
+build/
+.next/
+out/
+.docusaurus/
+.cache/
+
+# OS-specific Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

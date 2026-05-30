@@ -1,0 +1,41 @@
+# ==============================================================================
+# Production docker-compose.yml for complete RAG Chat Assistant
+# ==============================================================================
+version: '3.8'
+
+services:
+  # 1. Asynchronous Python FastAPI backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rag-chat-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Stateful volumes mapping to persist data locally on the host machine
+      - ./backend/storage:/app/storage
+      - ./backend/uploads:/app/uploads
+    networks:
+      - rag-network
+
+  # 2. Optimized Nginx React Single Page Application frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-chat-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
