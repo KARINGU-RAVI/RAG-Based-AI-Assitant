@@ -8,7 +8,8 @@ import {
   FileText, UploadCloud, Send, LogOut, Sun, Moon, 
   Activity, Star, ExternalLink, 
   Menu, X, Sliders, Database, Cpu, CheckCircle, AlertTriangle,
-  Pin, Archive, Download, Edit2, Check, RefreshCw, BarChart2, HeartPulse, Search
+  Pin, Archive, Download, Edit2, Check, RefreshCw, BarChart2, HeartPulse, Search,
+  User as UserIcon
 } from 'lucide-react';
 
 import { useAuthStore } from '../store/authStore';
@@ -17,6 +18,29 @@ import { useUIStore } from '../store/uiStore';
 import { chatApi, documentsApi, systemApi, streamChat } from '../services/api';
 import { Conversation, Message, Document, SourceCitation } from '../types';
 import AdminDashboard from './AdminDashboard';
+
+function RaviAvatar({ collapsed = false }: { collapsed?: boolean }) {
+  return (
+    <div className="flex items-center select-none cursor-pointer gap-2 hover:opacity-90 active:scale-98 transition-all shrink-0">
+      {/* Circular silhouette with pink-purple-indigo gradient border */}
+      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 p-0.5 flex items-center justify-center shadow-md shrink-0">
+        <div className="w-full h-full rounded-full bg-[#0E0616] flex items-center justify-center text-xs font-black text-[#c084fc] font-sans shadow-inner">
+          R
+        </div>
+      </div>
+      {!collapsed && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs font-black text-text tracking-wide font-sans capitalize">
+            Ravi
+          </span>
+          <svg className="w-3 h-3 text-[#71717a] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const { username, logout, role } = useAuthStore();
@@ -28,11 +52,12 @@ export default function ChatPage() {
   const { theme, toggleTheme } = useUIStore();
 
   // SaaS Navigation State Controls
-  const [currentTab, setCurrentTab] = useState<'chat' | 'kb' | 'analytics' | 'settings' | 'health'>('chat');
+  const [currentTab, setCurrentTab] = useState<'chat' | 'kb' | 'analytics' | 'settings' | 'profile' | 'health'>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showInsightsDrawer, setShowInsightsDrawer] = useState(true);
   const [toastText, setToastText] = useState<string | null>(null);
+  const [topProfileMenuOpen, setTopProfileMenuOpen] = useState(false);
 
   // Search and Filter States for Threads
   const [threadSearch, setThreadSearch] = useState('');
@@ -53,8 +78,7 @@ export default function ChatPage() {
   // Gemini API Key & Profile Configuration states
   const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [profileEmail, setProfileEmail] = useState(username ? `${username}@company.com` : 'user@company.com');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Health Stats & Gauges
   const [systemHealthy, setSystemHealthy] = useState(true);
@@ -159,6 +183,19 @@ export default function ChatPage() {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, streamingReply, isStreaming]);
+
+  // Click outside profile menu to close
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setTopProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Toast notifier helper
   const triggerToast = (msg: string) => {
@@ -416,7 +453,7 @@ export default function ChatPage() {
   const confidenceRating = averageConfidence >= 75 ? 'HIGH' : averageConfidence >= 55 ? 'MEDIUM' : 'LOW';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg text-text font-sans antialiased relative transition-colors duration-200 view-transition">
+    <div className="flex flex-col h-screen w-full max-w-full overflow-hidden bg-bg text-text font-sans antialiased relative transition-colors duration-200 view-transition">
       
       {/* Dynamic Action Toast */}
       <AnimatePresence>
@@ -432,81 +469,222 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Drawer Overlay */}
-      {mobileSidebarOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/35 z-40 backdrop-blur-xs transition-opacity duration-200"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── PANEL 1: COLLAPSIBLE LEFT SIDEBAR (280px to 48px) ── */}
-      <div 
-        className={`h-full bg-sidebar-bg border-r border-border flex flex-col shrink-0 transition-all duration-200 select-none z-40 ${
-          sidebarCollapsed ? "w-14" : "w-[280px]"
-        } ${
-          mobileSidebarOpen ? "fixed left-0 top-0 translate-x-0 w-72" : "hidden md:flex"
-        }`}
-      >
-        {/* Toggle Collapse Trigger */}
-        <div className="p-4 pb-2 flex justify-between items-center shrink-0">
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-6.5 h-6.5 rounded-lg bg-accent text-text-inv flex items-center justify-center shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 stroke-current" />
-              </div>
-              <span className="text-xs font-extrabold tracking-tight uppercase">TRUEAILAB</span>
-            </div>
-          )}
+      {/* ── GLOBAL TOP NAVIGATION HEADER (Spans full-width, flush with screen top) ── */}
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 shrink-0 bg-surface/85 backdrop-blur-md z-30 select-none">
+        
+        {/* Left Side: Brand Logo, Mobile Trigger & Breadcrumbs */}
+        <div className="flex items-center gap-3">
           <button 
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-7 h-7 rounded-md hover:bg-bg-hover text-text-4 hover:text-text-2 flex items-center justify-center transition-colors mx-auto md:mx-0 outline-none"
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setMobileSidebarOpen(true)}
+            className="md:hidden p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-text-2 shrink-0 transition-colors outline-none"
           >
-            <Menu className="w-4 h-4" />
+            <Menu className="w-4.5 h-4.5" />
           </button>
+          <div className="flex items-center gap-2">
+            <div className="w-7.5 h-7.5 rounded-lg bg-accent text-text-inv flex items-center justify-center shadow-md">
+              <Sparkles className="w-4 h-4 stroke-current" />
+            </div>
+            <span className="text-[13px] font-black tracking-widest text-text uppercase font-sans">TRUEAILAB <span className="font-light text-text-3">Assistant</span></span>
+          </div>
+
+          {/* Clickable Breadcrumbs in top bar */}
+          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-text-3 font-semibold select-none border-l border-border pl-3 ml-1.5 shrink-0">
+            <span 
+              onClick={() => setCurrentTab('chat')}
+              className="cursor-pointer hover:text-accent hover:underline transition-colors capitalize text-text-3"
+            >
+              TRUEAILAB
+            </span>
+            <span className="text-text-4">/</span>
+            <span 
+              onClick={() => {
+                if (currentTab === 'kb') setCurrentTab('kb');
+                else if (currentTab === 'analytics') setCurrentTab('analytics');
+                else if (currentTab === 'settings') setCurrentTab('settings');
+                else if (currentTab === 'profile') setCurrentTab('profile');
+                else if (currentTab === 'health') setCurrentTab('health');
+              }}
+              className="capitalize cursor-pointer hover:text-accent hover:underline transition-colors text-text-3"
+            >
+              {currentTab === 'kb' ? 'Knowledge Center' 
+                : currentTab === 'health' ? 'Operations Monitor' 
+                : currentTab === 'profile' ? 'Account Profile'
+                : currentTab === 'settings' ? 'AI Configuration'
+                : currentTab}
+            </span>
+            <span className="text-text-4">/</span>
+            <span className="text-text font-bold truncate max-w-[140px]">
+              {currentTab === 'chat' 
+                ? (conversations.find(c => c.id === activeConversationId)?.title || 'New Session')
+                : currentTab === 'kb' ? 'Documents Matrix'
+                : currentTab === 'analytics' ? 'Dashboard Metrics'
+                : currentTab === 'settings' ? 'AI Control Panel'
+                : currentTab === 'profile' ? 'Identity & Credentials'
+                : 'Hardware Status'}
+            </span>
+          </div>
         </div>
 
+        {/* Right Side: Quick Widgets & Circular Profile */}
+        <div className="flex items-center gap-3 font-sans">
+          
+          {currentTab === 'chat' && (
+            <button 
+              onClick={() => {
+                const willOpen = !showInsightsDrawer;
+                setShowInsightsDrawer(willOpen);
+                if (willOpen) {
+                  setTopProfileMenuOpen(false);
+                }
+              }}
+              className={`p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-accent transition-all shrink-0 border ${
+                showInsightsDrawer ? "bg-accent-dim border-accent/25 text-accent" : "border-transparent"
+              }`}
+              title="Toggle RAG Pipeline Insights"
+            >
+              <Cpu className="w-4 h-4" />
+            </button>
+          )}
+          <button 
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-text-2 transition-colors border border-transparent outline-none"
+            title="Change theme color"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
+          
+          <div ref={profileMenuRef} className="relative font-sans shrink-0">
+            <div 
+              className="flex items-center cursor-pointer select-none" 
+              onClick={() => {
+                const willOpen = !topProfileMenuOpen;
+                setTopProfileMenuOpen(willOpen);
+                if (willOpen) {
+                  setShowInsightsDrawer(false);
+                }
+              }}
+            >
+              <RaviAvatar collapsed={false} />
+            </div>
+            
+            <AnimatePresence>
+              {topProfileMenuOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                  className="absolute top-11 right-0 w-52 p-2 bg-surface border border-border rounded-xl shadow-xl z-50 select-none space-y-0.5 card-3d preserve-3d dot-grid font-sans text-left"
+                >
+                  <div className="px-2.5 py-1.5 border-b border-border mb-1 select-none text-left">
+                    <span className="block text-[9px] font-black text-text-4 uppercase tracking-widest">Signed in as</span>
+                    <span className="block text-xs font-black text-text truncate mt-0.5">{username || 'ravi'}</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => { setCurrentTab('profile'); setTopProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-text-2 hover:bg-bg-hover hover:text-text transition-colors text-left outline-none"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-text-4" />
+                    Account & Profile
+                  </button>
+                  
+                  <div className="h-px bg-border my-1" />
+                  
+                  <button
+                    onClick={() => { logout(); setTopProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold text-error hover:bg-[#ff0000]/10 hover:text-error transition-colors text-left outline-none"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign Out Workspace
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* ── UNDER-HEADER VIEWPORT CONTENT (Flex sidebar + content side-by-side) ── */}
+      <div className="flex-1 flex w-full overflow-hidden relative">
+
+        {/* Mobile Drawer Overlay */}
+        {mobileSidebarOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black/35 z-40 backdrop-blur-xs transition-opacity duration-200"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* ── PANEL 1: COLLAPSIBLE LEFT SIDEBAR (280px to 48px) ── */}
+        <div 
+          className={`h-full bg-sidebar-bg border-r border-border flex flex-col shrink-0 transition-all duration-200 select-none z-40 ${
+            sidebarCollapsed ? "w-14" : "w-[280px]"
+          } ${
+            mobileSidebarOpen ? "fixed left-0 top-14 translate-x-0 w-72" : "hidden md:flex"
+          }`}
+        >
+          {/* Collapsed/Expanded Project Explorer Header */}
+          <div className="p-4 px-3.5 pb-2.5 flex justify-between items-center shrink-0 border-b border-border mb-2">
+            {!sidebarCollapsed && (
+              <span className="text-xs font-black tracking-wider text-text uppercase font-sans">Project Explorer</span>
+            )}
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="w-7 h-7 rounded-lg hover:bg-bg-hover text-text-4 hover:text-text-2 flex items-center justify-center transition-colors mx-auto md:mx-0 outline-none"
+              title={sidebarCollapsed ? "Expand explorer" : "Collapse explorer"}
+            >
+              <Menu className="w-4.5 h-4.5" />
+            </button>
+          </div>
+
         {/* Global Nav Operations */}
-        <div className="p-3 pt-2 flex flex-col gap-1 shrink-0">
+        <div className="p-4 pt-1 flex flex-col gap-1 shrink-0">
           {/* New Chat trigger */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.01, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.05)" }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleStartNewChat}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-bg-hover text-xs font-bold text-text transition-all ${
-              sidebarCollapsed ? "justify-center shadow-none" : "shadow-sm active:scale-98"
+            className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-border bg-surface hover:bg-bg-hover text-xs font-bold text-text transition-all ${
+              sidebarCollapsed ? "justify-center shadow-none" : "shadow-sm"
             }`}
             title="Start new sandboxed conversation"
           >
-            <Plus className="w-4 h-4 text-accent shrink-0" />
+            <Plus className="w-4 h-4 text-accent shrink-0 animate-pulse" />
             {!sidebarCollapsed && <span className="truncate">New Chat</span>}
-          </button>
+          </motion.button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-2.5 py-1.5 flex flex-col gap-0.5 shrink-0">
+        <div className="px-3.5 py-1.5 flex flex-col gap-1 shrink-0">
           {[
             { id: 'chat', label: 'Conversational Assistant', icon: MessageSquare },
             { id: 'kb', label: 'Document Base Center', icon: Database, count: docs.length },
             { id: 'analytics', label: 'Executive Analytics', icon: BarChart2 },
             { id: 'settings', label: 'AI Configurations', icon: Sliders },
+            { id: 'profile', label: 'Account Profile', icon: UserIcon },
             { id: 'health', label: 'Operations Health', icon: HeartPulse, pulse: true }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = currentTab === tab.id;
             
             return (
-              <button
+              <motion.button
                 key={tab.id}
+                whileHover={{ scale: 1.01, x: 2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => { setCurrentTab(tab.id as any); setMobileSidebarOpen(false); }}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-[12.5px] font-semibold border transition-all ${
                   isActive 
-                    ? "bg-surface text-text border-border shadow-sm font-bold" 
+                    ? "bg-accent-dim text-accent border-accent/20 shadow-sm font-bold" 
                     : "border-transparent text-text-3 hover:bg-bg-hover hover:text-text-2"
                 } ${sidebarCollapsed ? "justify-center" : ""}`}
                 title={tab.label}
               >
                 <div className="relative shrink-0 flex items-center justify-center">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-accent" : ""}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-text-4"}`} />
                   {tab.pulse && systemHealthy && (
                     <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                   )}
@@ -515,54 +693,54 @@ export default function ChatPage() {
                   <>
                     <span className="truncate">{tab.label}</span>
                     {tab.count !== undefined && (
-                      <span className="ml-auto text-[10px] font-bold bg-bg-muted text-text-3 px-1.5 py-0.25 rounded border border-border">
+                      <span className="ml-auto text-[10px] font-extrabold bg-bg-muted text-text-3 px-1.5 py-0.25 rounded border border-border">
                         {tab.count}
                       </span>
                     )}
                   </>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
         {/* Thread History scroll group */}
         {!sidebarCollapsed && currentTab === 'chat' && (
-          <div className="flex-1 overflow-y-auto px-3 py-3 border-t border-border mt-3 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-3 border-t border-border mt-3 flex flex-col min-h-0">
             {/* Search filter */}
             <div className="relative mb-3 shrink-0">
-              <Search className="absolute w-3.5 h-3.5 text-text-4 left-2.5 top-2" />
+              <Search className="absolute w-4 h-4 text-text-4 left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Search conversation histories..."
                 value={threadSearch}
                 onChange={(e) => setThreadSearch(e.target.value)}
-                className="w-full pl-8 pr-3 h-7.5 rounded bg-bg border border-border focus:border-accent outline-none text-[11px] text-text transition-all font-medium"
+                className="w-full pl-9 pr-3.5 h-9 rounded-lg bg-bg border border-border focus:border-accent/40 focus:ring-1 focus:ring-accent/25 outline-none text-xs text-text transition-all font-medium placeholder:text-text-4"
               />
             </div>
 
             {/* Pinned group */}
             {pinnedList.length > 0 && (
               <div className="mb-4 shrink-0">
-                <span className="block px-2 text-[9px] font-extrabold uppercase tracking-widest text-text-4 mb-1.5">Pinned Threads</span>
-                <div className="space-y-0.5">
+                <span className="block px-1 text-[9.5px] font-bold uppercase tracking-widest text-text-4 mb-2">Pinned Threads</span>
+                <div className="space-y-1">
                   {pinnedList.map(c => {
                     const isActive = activeConversationId === c.id;
                     return (
                       <div
                         key={c.id}
                         onClick={() => handleSwitchSession(c.id)}
-                        className={`group flex items-center w-full px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer relative ${
+                        className={`group flex items-center w-full px-2.5 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer relative ${
                           isActive 
-                            ? 'bg-surface text-text border-border shadow-sm' 
+                            ? 'bg-surface text-text border-border shadow-sm font-bold' 
                             : 'border-transparent text-text-3 hover:bg-bg-hover hover:text-text-2'
                         }`}
                       >
-                        <MessageSquare className={`w-3.5 h-3.5 mr-2 shrink-0 ${isActive ? "text-accent" : "text-text-4"}`} />
+                        <MessageSquare className={`w-4 h-4 mr-2.5 shrink-0 ${isActive ? "text-accent" : "text-text-4"}`} />
                         <span className="truncate flex-1 pr-6">{c.title}</span>
                         <div className="absolute right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={(e) => togglePinThread(c.id, e)} className="p-0.5 rounded text-text-4 hover:text-text-2" title="Unpin thread">
-                            <Pin className="w-3 h-3 rotate-45" />
+                            <Pin className="w-3.5 h-3.5 rotate-45" />
                           </button>
                         </div>
                       </div>
@@ -574,11 +752,11 @@ export default function ChatPage() {
 
             {/* General Today thread group */}
             <div className="flex-1 overflow-y-auto">
-              <span className="block px-2 text-[9px] font-extrabold uppercase tracking-widest text-text-4 mb-1.5">Today Threads</span>
+              <span className="block px-1 text-[9.5px] font-bold uppercase tracking-widest text-text-4 mb-2">Today Threads</span>
               {activeUnpinnedList.length === 0 && pinnedList.length === 0 ? (
-                <p className="px-2 text-[10.5px] text-text-4 italic font-medium">No historic conversation grids.</p>
+                <p className="px-1 text-[11px] text-text-4 italic font-medium">No historic conversation grids.</p>
               ) : (
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {activeUnpinnedList.map(conv => {
                     const isActive = activeConversationId === conv.id;
                     const isEditing = editingThreadId === conv.id;
@@ -587,13 +765,13 @@ export default function ChatPage() {
                       <div
                         key={conv.id}
                         onClick={() => !isEditing && handleSwitchSession(conv.id)}
-                        className={`group flex items-center w-full px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer relative ${
+                        className={`group flex items-center w-full px-2.5 py-2 rounded-lg text-[12.5px] font-semibold border transition-all cursor-pointer relative ${
                           isActive 
-                            ? 'bg-surface text-text border-border shadow-sm' 
+                            ? 'bg-surface text-text border-border shadow-sm font-bold' 
                             : 'border-transparent text-text-3 hover:bg-bg-hover hover:text-text-2'
                         }`}
                       >
-                        <MessageSquare className={`w-3.5 h-3.5 mr-2 shrink-0 ${isActive ? "text-accent" : "text-text-4"}`} />
+                        <MessageSquare className={`w-4 h-4 mr-2.5 shrink-0 ${isActive ? "text-accent" : "text-text-4"}`} />
                         
                         {isEditing ? (
                           <input
@@ -601,7 +779,7 @@ export default function ChatPage() {
                             value={editTitleVal}
                             onChange={(e) => setEditTitleVal(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && saveEditTitle(conv.id, e)}
-                            className="bg-bg border border-accent rounded px-1.5 py-0.5 text-xs text-text outline-none flex-1 min-w-0"
+                            className="bg-bg border border-accent rounded px-2 py-0.5 text-xs text-text outline-none flex-1 min-w-0"
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
@@ -621,16 +799,16 @@ export default function ChatPage() {
                           ) : (
                             <>
                               <button onClick={(e) => startEditTitle(conv.id, conv.title, e)} className="p-0.5 rounded text-text-4 hover:text-text-2" title="Rename">
-                                <Edit2 className="w-3 h-3" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={(e) => togglePinThread(conv.id, e)} className="p-0.5 rounded text-text-4 hover:text-accent" title="Pin">
-                                <Pin className="w-3 h-3" />
+                                <Pin className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={(e) => toggleArchiveThread(conv.id, e)} className="p-0.5 rounded text-text-4 hover:text-warning" title="Archive">
-                                <Archive className="w-3 h-3" />
+                                <Archive className="w-3.5 h-3.5" />
                               </button>
                               <button onClick={(e) => deleteThread(conv.id, e)} className="p-0.5 rounded text-text-4 hover:text-error" title="Delete">
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
                           )}
@@ -644,107 +822,45 @@ export default function ChatPage() {
           </div>
         )}
 
-        {/* Profile Footer */}
-        <div className="p-3 border-t border-border bg-sidebar-bg shrink-0">
-          <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? "justify-center" : "px-1"}`}>
-            <div className="w-7 h-7 rounded-xl bg-accent text-text-inv flex items-center justify-center font-bold text-xs uppercase shrink-0 shadow-sm shadow-accent-glow">
-              {username ? username[0] : 'U'}
-            </div>
-            
-            {!sidebarCollapsed && (
-              <div className="flex-1 min-w-0 flex items-center justify-between">
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-text truncate leading-tight">{username}</h4>
-                  <span className="text-[10px] text-text-3 font-semibold capitalize tracking-wide block">{role} workspace</span>
-                </div>
-                <button 
-                  onClick={logout}
-                  className="p-1.5 rounded-lg hover:bg-error-dim text-text-4 hover:text-error transition-colors outline-none"
-                  title="Sign out of sandboxed system"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* ── PANEL 2: MAIN WORKSPACE CONTAINER ── */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full bg-bg relative">
+      <div className="flex-1 flex flex-col overflow-hidden h-full bg-bg relative z-10">
         
-        {/* Workspace Breadcrumb Header */}
-        <div className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 shrink-0 bg-surface z-30 select-none">
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-text-2 shrink-0 transition-colors outline-none"
-            >
-              <Menu className="w-4.5 h-4.5" />
-            </button>
-            
-            {/* SaaS Breadcrumbs */}
-            <div className="flex items-center gap-2 text-xs text-text-3 font-semibold">
-              <span className="capitalize">TRUEAILAB</span>
-              <span className="text-text-4">/</span>
-              <span className="capitalize text-text-3">
-                {currentTab === 'kb' ? 'Knowledge Center' : currentTab === 'health' ? 'Operations Monitor' : currentTab}
-              </span>
-              <span className="text-text-4">/</span>
-              <span className="text-text font-bold truncate max-w-[200px]">
-                {currentTab === 'chat' 
-                  ? (conversations.find(c => c.id === activeConversationId)?.title || 'New Session')
-                  : currentTab === 'kb' ? 'Documents Matrix'
-                  : currentTab === 'analytics' ? 'Dashboard Metrics'
-                  : currentTab === 'settings' ? 'AI Control Panel'
-                  : 'Hardware Status'}
-              </span>
-            </div>
-          </div>
-
-          {/* Quick Header Widgets */}
-          <div className="flex items-center gap-2.5">
-            {currentTab === 'chat' && (
-              <button 
-                onClick={() => setShowInsightsDrawer(!showInsightsDrawer)}
-                className={`p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-accent transition-all shrink-0 border ${
-                  showInsightsDrawer ? "bg-accent-dim border-accent/25 text-accent" : "border-transparent"
-                }`}
-                title="Toggle RAG Pipeline Insights"
-              >
-                <Cpu className="w-4 h-4" />
-              </button>
-            )}
-            
-            <button 
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-text-2 transition-colors border border-transparent outline-none"
-              title="Change theme color"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <button 
-              onClick={() => setCurrentTab('settings')}
-              className="p-1.5 rounded-lg hover:bg-bg-hover text-text-3 hover:text-text-2 transition-colors border border-transparent outline-none"
-              title="AI model configs"
-            >
-              <Sliders className="w-4 h-4" />
-            </button>
-
-            <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
-            
-            <div 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-85 select-none" 
-              onClick={() => setCurrentTab('settings')}
-            >
-              <div className="w-6.5 h-6.5 rounded-xl bg-accent text-text-inv flex items-center justify-center font-bold text-xs shadow-sm">
-                {username ? username[0] : 'U'}
-              </div>
-              <span className="text-xs font-bold text-text-2 hidden sm:inline truncate max-w-[90px]">{username}</span>
-            </div>
-          </div>
+        {/* 3D Animated Background Mesh Blobs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none perspective-1000 preserve-3d">
+          <motion.div 
+            animate={{ 
+              x: [0, 40, -20, 0], 
+              y: [0, -50, 30, 0],
+              rotate: [0, 120, 240, 360],
+              scale: [1, 1.15, 0.9, 1] 
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-40 -left-40 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-60 dark:opacity-35"
+          />
+          <motion.div 
+            animate={{ 
+              x: [0, -60, 40, 0], 
+              y: [0, 40, -50, 0],
+              rotate: [360, 240, 120, 0],
+              scale: [1, 0.85, 1.1, 1] 
+            }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/3 -right-20 w-80 h-80 bg-purple-500/8 dark:bg-purple-900/12 rounded-full blur-3xl opacity-50 dark:opacity-30"
+          />
+          <motion.div 
+            animate={{ 
+              x: [0, 30, -40, 0], 
+              y: [0, 60, -30, 0],
+              scale: [0.9, 1.1, 0.95, 0.9] 
+            }}
+            transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+            className="absolute -bottom-20 left-1/3 w-[450px] h-[450px] bg-indigo-500/6 dark:bg-indigo-900/10 rounded-full blur-3xl opacity-40 dark:opacity-25"
+          />
         </div>
+
+
 
         {/* Tab Routing panels */}
         <div className="flex-1 flex overflow-hidden relative bg-bg">
@@ -754,11 +870,13 @@ export default function ChatPage() {
             currentTab === 'chat' ? 'flex' : 'hidden'
           }`}>
             
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 space-y-6 scrollbar-thin dot-grid">
+            <div className={`flex-1 px-4 py-6 md:px-8 space-y-6 scrollbar-thin dot-grid ${
+              messages.length === 0 && !isStreaming ? "overflow-hidden flex flex-col justify-center animate-fade-in" : "overflow-y-auto"
+            }`}>
               
               {messages.length === 0 && !isStreaming ? (
                 /* 1. Landing Experience empty state */
-                <div className="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center mt-12 md:mt-24 select-none view-transition">
+                <div className="flex flex-col items-center justify-center max-w-xl mx-auto text-center py-2 select-none view-transition w-full">
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -776,21 +894,30 @@ export default function ChatPage() {
                   </p>
 
                   {/* suggested Prompt Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 w-full perspective-1000 preserve-3d">
                     {[
                       { title: "Reset credentials", prompt: "How can I reset my corporate system password?", desc: "Standard steps to change credentials" },
                       { title: "Contact help desk", prompt: "How do I contact IT help desk and support?", desc: "Internal hotline and support emails" },
                       { title: "Annual leave policy", prompt: "Explain the company annual leave and vacation policy.", desc: "Holiday allocations and approval workflows" },
                       { title: "Employee Onboarding", prompt: "What are our engineering team onboarding steps?", desc: "First week setup requirements" }
                     ].map((item, idx) => (
-                      <button
+                      <motion.button
                         key={idx}
+                        whileHover={{ 
+                          rotateX: 3, 
+                          rotateY: -3, 
+                          translateZ: 12,
+                          y: -4,
+                          boxShadow: "0 16px 32px rgba(0, 0, 0, 0.04), 0 0 20px rgba(99, 102, 241, 0.12)"
+                        }}
+                        whileTap={{ scale: 0.97 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         onClick={() => handleSendMessage(item.prompt)}
-                        className="p-4 text-left rounded-xl border border-border bg-surface hover:bg-bg-hover hover:border-accent hover:shadow-glow-indigo transition-all duration-200 outline-none group"
+                        className="p-4 text-left rounded-xl border border-border bg-surface hover:bg-bg-hover hover:border-accent hover:shadow-glow-indigo transition-all duration-200 outline-none group card-3d preserve-3d"
                       >
                         <span className="block text-xs font-bold text-text group-hover:text-accent transition-colors mb-1">{item.title}</span>
                         <span className="block text-[10.5px] text-text-3 font-semibold leading-relaxed leading-normal">{item.desc}</span>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -1055,9 +1182,7 @@ export default function ChatPage() {
                   </button>
                 </div>
 
-                <div className="text-center mt-2.5 text-[10px] text-text-4 font-bold select-none uppercase tracking-widest leading-normal">
-                  Vector similarity indexing threshold strictly set at {similarityThreshold.toFixed(2)} (grounded facts only)
-                </div>
+
               </div>
             </div>
 
@@ -1067,7 +1192,7 @@ export default function ChatPage() {
           <div className={`flex-1 overflow-y-auto page-view ${
             currentTab === 'kb' ? 'block' : 'hidden'
           }`}>
-            <div className="max-w-5xl mx-auto px-6 py-8 space-y-6 select-none dot-grid">
+            <div className="max-w-5xl mx-auto px-6 pt-12 pb-16 space-y-8 select-none dot-grid perspective-1000 preserve-3d">
               
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 border-b border-border pb-5 gap-3">
                 <div>
@@ -1117,7 +1242,7 @@ export default function ChatPage() {
               </div>
 
               {/* statistics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 perspective-1000 preserve-3d">
                 {[
                   { label: "Matrix Ingested", value: docs.length, icon: FileText, color: "text-accent bg-accent-dim border-accent/15" },
                   { label: "FAISS Indexed", value: docs.filter(d => d.status === 'completed').length, icon: CheckCircle, color: "text-success bg-success-dim border-success/15" },
@@ -1126,7 +1251,18 @@ export default function ChatPage() {
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
-                    <div key={i} className="p-3.5 border border-border rounded-xl bg-surface flex items-center gap-3.5 shadow-sm">
+                    <motion.div 
+                      key={i} 
+                      whileHover={{ 
+                        rotateX: 2, 
+                        rotateY: -2, 
+                        translateZ: 6,
+                        y: -3,
+                        boxShadow: "0 16px 32px rgba(0, 0, 0, 0.04), 0 0 20px rgba(99, 102, 241, 0.08)"
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="p-3.5 border border-border rounded-xl bg-surface flex items-center gap-3.5 shadow-sm card-3d preserve-3d"
+                    >
                       <div className={`w-8.5 h-8.5 rounded-lg border flex items-center justify-center ${stat.color} shrink-0`}>
                         <Icon className="w-4.5 h-4.5" />
                       </div>
@@ -1134,7 +1270,7 @@ export default function ChatPage() {
                         <span className="block text-[9px] font-extrabold text-text-4 uppercase tracking-wider">{stat.label}</span>
                         <span className="text-base font-black text-text mt-0.5">{stat.value}</span>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -1247,7 +1383,7 @@ export default function ChatPage() {
           <div className={`flex-1 overflow-y-auto page-view ${
             currentTab === 'analytics' ? 'block' : 'hidden'
           }`}>
-            <div className="max-w-5xl mx-auto px-6 py-8 space-y-6 select-none dot-grid">
+            <div className="max-w-5xl mx-auto px-6 pt-12 pb-16 space-y-8 select-none dot-grid perspective-1000 preserve-3d">
               <div className="border-b border-border pb-5">
                 <h2 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
                   <BarChart2 className="w-5.5 h-5.5 text-accent" />
@@ -1264,7 +1400,7 @@ export default function ChatPage() {
           <div className={`flex-1 overflow-y-auto page-view ${
             currentTab === 'settings' ? 'block' : 'hidden'
           }`}>
-            <div className="max-w-3xl mx-auto px-6 py-8 space-y-6 select-none dot-grid">
+            <div className="max-w-3xl mx-auto px-6 pt-12 pb-16 space-y-8 select-none dot-grid perspective-1000 preserve-3d">
               
               <div className="border-b border-border pb-5">
                 <h2 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
@@ -1277,7 +1413,17 @@ export default function ChatPage() {
               <div className="space-y-6">
                 
                 {/* Panel 1: Google Gemini Parameters Configuration */}
-                <div className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm">
+                <motion.div 
+                  whileHover={{ 
+                    rotateX: 2, 
+                    rotateY: -2, 
+                    translateZ: 6,
+                    y: -3,
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.04), 0 0 24px rgba(99, 102, 241, 0.12)" 
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm card-3d preserve-3d"
+                >
                   
                   <div>
                     <h3 className="text-sm font-bold text-text uppercase tracking-wider mb-1">Google Gemini API Key</h3>
@@ -1297,7 +1443,9 @@ export default function ChatPage() {
                         onChange={(e) => setGeminiApiKey(e.target.value)}
                         className="flex-1 px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono focus:border-accent focus:bg-surface outline-none text-text transition-all placeholder:text-text-4 font-semibold"
                       />
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97, y: 1 }}
                         type="button"
                         onClick={() => {
                           localStorage.setItem('gemini_api_key', geminiApiKey);
@@ -1306,8 +1454,10 @@ export default function ChatPage() {
                         className="px-4 h-9 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
                       >
                         Apply Key
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97, y: 1 }}
                         type="button"
                         onClick={() => {
                           setGeminiApiKey('');
@@ -1318,7 +1468,7 @@ export default function ChatPage() {
                         title="Clear API Key override"
                       >
                         Clear Override
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
 
@@ -1434,17 +1584,50 @@ export default function ChatPage() {
                   </div>
 
                   <div className="border-t border-border pt-4 flex justify-end">
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97, y: 1 }}
                       onClick={() => triggerToast("AI configuration applied successfully")}
                       className="h-9 px-5 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
                     >
                       Save Configuration
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
+
+              </div>
+
+            </div>
+          </div>
+
+          {/* TAB F: USER PROFILE SETTINGS */}
+          <div className={`flex-1 overflow-y-auto page-view ${
+            currentTab === 'profile' ? 'block' : 'hidden'
+          }`}>
+            <div className="max-w-3xl mx-auto px-6 pt-12 pb-16 space-y-8 select-none dot-grid perspective-1000 preserve-3d">
+              
+              <div className="border-b border-border pb-5">
+                <h2 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
+                  <UserIcon className="w-5.5 h-5.5 text-accent" />
+                  Account & Profile Console
+                </h2>
+                <p className="text-xs text-text-3 mt-0.5">Manage user credentials, update workspace profile information, and secure account keys</p>
+              </div>
+
+              <div className="space-y-6">
 
                 {/* Panel 2: Profile & Account Configurations */}
-                <div className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm">
+                <motion.div 
+                  whileHover={{ 
+                    rotateX: 2, 
+                    rotateY: -2, 
+                    translateZ: 6,
+                    y: -3,
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.04), 0 0 24px rgba(99, 102, 241, 0.12)" 
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm card-3d preserve-3d"
+                >
                   <div>
                     <h3 className="text-sm font-bold text-text uppercase tracking-wider mb-1">Profile & Account Settings</h3>
                     <p className="text-[11px] text-text-3 font-semibold leading-relaxed">
@@ -1485,60 +1668,32 @@ export default function ChatPage() {
                     />
                   </div>
 
-                  {/* Password reset input boxes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">New Password Key</label>
-                      <input
-                        type="password"
-                        placeholder="Min 6 characters..."
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none text-text transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Confirm Password Key</label>
-                      <input
-                        type="password"
-                        placeholder="Re-enter password..."
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none text-text transition-all"
-                      />
-                    </div>
-                  </div>
-
                   <div className="border-t border-border pt-4 flex justify-end gap-3.5 select-none">
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97, y: 1 }}
                       type="button"
                       onClick={() => {
                         setProfileEmail(username ? `${username}@company.com` : 'user@company.com');
-                        setNewPassword('');
-                        setConfirmPassword('');
                         triggerToast("Profile edits reset successfully");
                       }}
                       className="h-9 px-4 border border-border hover:bg-bg-hover rounded-lg text-text-2 text-xs font-bold transition-all outline-none"
                     >
                       Cancel Profile Changes
-                    </button>
-                    <button 
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97, y: 1 }}
                       type="button"
                       onClick={() => {
-                        if (newPassword && newPassword !== confirmPassword) {
-                          alert("New Password and Confirm Password fields must match perfectly.");
-                          return;
-                        }
                         triggerToast("Workspace Profile Configurations saved successfully!");
-                        setNewPassword('');
-                        setConfirmPassword('');
                       }}
                       className="h-9 px-5 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
                     >
                       Save Profile & Account
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
 
               </div>
 
@@ -1549,7 +1704,7 @@ export default function ChatPage() {
           <div className={`flex-1 overflow-y-auto page-view ${
             currentTab === 'health' ? 'block' : 'hidden'
           }`}>
-            <div className="max-w-4xl mx-auto px-6 py-8 space-y-6 select-none dot-grid">
+            <div className="max-w-4xl mx-auto px-6 pt-12 pb-16 space-y-8 select-none dot-grid perspective-1000 preserve-3d">
               
               <div className="border-b border-border pb-5">
                 <h2 className="text-xl font-bold tracking-tight text-text flex items-center gap-2">
@@ -1846,6 +2001,9 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
 
+
+
+      </div>
     </div>
   );
 }
