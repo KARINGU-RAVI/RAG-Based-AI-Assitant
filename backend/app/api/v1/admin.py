@@ -10,7 +10,9 @@ from app.models.user import User
 from app.models.document import Document
 from app.models.conversation import Conversation, Message
 from app.models.logs import SystemLog
-from app.schemas.admin import SystemLogResponse, AnalyticsResponse
+from app.schemas.admin import SystemLogResponse, AnalyticsResponse, SystemSettings
+from app.core.config import settings, BASE_DIR
+import os
 
 router = APIRouter()
 
@@ -86,3 +88,40 @@ async def get_system_analytics(
         average_similarity_score=avg_score,
         total_tokens_used=total_tokens_used
     )
+
+@router.get("/settings", response_model=SystemSettings)
+async def get_settings(current_admin: User = Depends(get_current_admin)):
+    """Retrieves current configurable system settings."""
+    return SystemSettings(
+        GEMINI_API_KEY=settings.GEMINI_API_KEY
+    )
+
+@router.post("/settings", response_model=SystemSettings)
+async def update_settings(
+    new_settings: SystemSettings,
+    current_admin: User = Depends(get_current_admin)
+):
+    """Updates system settings and writes to .env file."""
+    settings.GEMINI_API_KEY = new_settings.GEMINI_API_KEY
+    
+    env_path = BASE_DIR / ".env"
+    
+    env_lines = []
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            env_lines = f.readlines()
+            
+    key_found = False
+    for i, line in enumerate(env_lines):
+        if line.startswith("GEMINI_API_KEY="):
+            env_lines[i] = f"GEMINI_API_KEY={new_settings.GEMINI_API_KEY}\n"
+            key_found = True
+            break
+            
+    if not key_found:
+        env_lines.append(f"GEMINI_API_KEY={new_settings.GEMINI_API_KEY}\n")
+        
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.writelines(env_lines)
+        
+    return new_settings

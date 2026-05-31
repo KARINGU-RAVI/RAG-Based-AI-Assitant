@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -74,13 +75,13 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     """Logs in an active user, generating a secure JWT token. Supports login via username or email."""
-    # Search by username
-    result = await db.execute(select(User).filter(User.username == form_data.username))
+    # Search by username (case-insensitive)
+    result = await db.execute(select(User).filter(func.lower(User.username) == form_data.username.lower()))
     db_user = result.scalars().first()
     
-    # Fallback to search by email
+    # Fallback to search by email (case-insensitive)
     if not db_user:
-        result = await db.execute(select(User).filter(User.email == form_data.username))
+        result = await db.execute(select(User).filter(func.lower(User.email) == form_data.username.lower()))
         db_user = result.scalars().first()
         
     if not db_user or not verify_password(form_data.password, db_user.hashed_password):

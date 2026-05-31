@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, FileText, MessageSquare, ShieldAlert, Cpu, 
   ArrowLeft, Search, RefreshCw, AlertTriangle, CheckCircle, Database,
-  TrendingUp, Clock
+  TrendingUp, Clock, Settings as SettingsIcon, Save
 } from 'lucide-react';
 import { adminApi } from '../services/api';
-import { Analytics, SystemLog } from '../types';
+import { Analytics, SystemLog, SystemSettings } from '../types';
 import { useUIStore } from '../store/uiStore';
 
 interface AdminDashboardProps {
@@ -20,18 +20,24 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLogLevel, setSelectedLogLevel] = useState<string>('ALL');
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
+  const [activeAdminTab, setActiveAdminTab] = useState<'analytics' | 'settings'>('analytics');
+  const [settingsData, setSettingsData] = useState<SystemSettings>({ GEMINI_API_KEY: '' });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
   const setActiveTab = useUIStore((state) => state.setActiveTab);
 
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [analyticsData, logsData] = await Promise.all([
+      const [analyticsData, logsData, settingsRes] = await Promise.all([
         adminApi.getAnalytics(),
-        adminApi.getLogs(100)
+        adminApi.getLogs(100),
+        adminApi.getSettings().catch(() => ({ GEMINI_API_KEY: '' }))
       ]);
       setAnalytics(analyticsData);
       setLogs(logsData);
+      setSettingsData(settingsRes);
     } catch (err) {
       console.error("Failed to load administrative analytics data", err);
     } finally {
@@ -49,6 +55,20 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
     const matchesLevel = selectedLogLevel === 'ALL' || log.level === selectedLogLevel;
     return matchesSearch && matchesLevel;
   });
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    setSettingsMsg(null);
+    try {
+      await adminApi.updateSettings(settingsData);
+      setSettingsMsg({ type: 'success', text: 'Settings updated successfully' });
+      setTimeout(() => setSettingsMsg(null), 3000);
+    } catch (err: any) {
+      setSettingsMsg({ type: 'error', text: err.response?.data?.detail || 'Failed to update settings' });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   return (
     <div className={embedMode ? "px-0 py-0 bg-transparent transition-colors duration-200" : "min-h-screen px-6 py-8 bg-bg-subtle transition-colors duration-200 dot-grid"}>
@@ -93,7 +113,32 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
       ) : (
         <div className="space-y-6">
           
-          {/* Executive KPIs Metrics Grid */}
+          <div className="flex items-center gap-4 border-b border-border mb-6">
+            <button
+              onClick={() => setActiveAdminTab('analytics')}
+              className={`pb-3 text-xs font-bold uppercase tracking-wider outline-none transition-colors ${
+                activeAdminTab === 'analytics'
+                  ? 'text-accent border-b-2 border-accent'
+                  : 'text-text-4 hover:text-text-3'
+              }`}
+            >
+              System Analytics
+            </button>
+            <button
+              onClick={() => setActiveAdminTab('settings')}
+              className={`pb-3 text-xs font-bold uppercase tracking-wider outline-none transition-colors ${
+                activeAdminTab === 'settings'
+                  ? 'text-accent border-b-2 border-accent'
+                  : 'text-text-4 hover:text-text-3'
+              }`}
+            >
+              Configuration
+            </button>
+          </div>
+
+          {activeAdminTab === 'analytics' ? (
+            <>
+              {/* Executive KPIs Metrics Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             
             {/* KPI 1 */}
@@ -161,7 +206,7 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
               <div>
                 <h3 className="text-[10px] font-bold text-text-3 uppercase tracking-wider">Avg Similarity</h3>
                 <p className="text-lg font-black text-text mt-0.5">
-                  {analytics?.average_similarity_score ? `${(analytics.average_similarity_score * 100).toFixed(1)}%` : '78.5%'}
+                  {analytics?.average_similarity_score ? `${(analytics.average_similarity_score * 100).toFixed(1)}%` : '0%'}
                 </p>
               </div>
             </div>
@@ -175,7 +220,7 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
               <div>
                 <h3 className="text-[10px] font-bold text-text-3 uppercase tracking-wider">Tokens Incurred</h3>
                 <p className="text-lg font-black text-text mt-0.5">
-                  {analytics?.total_tokens_used ? analytics.total_tokens_used.toLocaleString() : '84,950'}
+                  {analytics?.total_tokens_used ? analytics.total_tokens_used.toLocaleString() : '0'}
                 </p>
               </div>
             </div>
@@ -502,6 +547,59 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
               </table>
             </div>
           </div>
+          </>
+          ) : (
+            <div className="max-w-2xl bg-surface border border-border rounded-xl shadow-sm p-6">
+              <div className="mb-6">
+                <h2 className="text-sm font-black text-text flex items-center gap-2">
+                  <SettingsIcon className="w-4 h-4 text-accent" />
+                  System Configuration
+                </h2>
+                <p className="text-xs text-text-3 mt-1">
+                  Manage core system parameters and environment variables. Changes are written to the server's .env file.
+                </p>
+              </div>
+
+              {settingsMsg && (
+                <div className={`p-3 mb-6 rounded-lg text-xs font-bold border ${settingsMsg.type === 'success' ? 'bg-success-dim text-success border-success/20' : 'bg-error-dim text-error border-error/20'}`}>
+                  {settingsMsg.text}
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-bold text-text-3 uppercase tracking-wider mb-2">
+                    Gemini API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={settingsData.GEMINI_API_KEY}
+                    onChange={(e) => setSettingsData({ ...settingsData, GEMINI_API_KEY: e.target.value })}
+                    placeholder="Enter API key..."
+                    className="w-full bg-bg border border-border focus:border-accent rounded-lg px-4 py-2.5 text-xs text-text outline-none transition-colors"
+                  />
+                  <p className="text-[10px] text-text-4 mt-1.5 font-medium">
+                    The API key used for generating embeddings and chat completions via Google's generative models.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="flex items-center justify-center gap-2 h-9 px-6 bg-accent hover:bg-accent-hover text-bg font-bold text-xs rounded-lg transition-colors outline-none disabled:opacity-50"
+                  >
+                    {savingSettings ? (
+                      <span className="w-3.5 h-3.5 border-2 border-bg border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    Save Configuration
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
