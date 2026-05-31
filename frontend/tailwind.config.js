@@ -16,6 +16,27 @@ export default {
           accent: "#3b82f6",
           text: "#f3f4f6"
         },
+        // Mapped CSS variables for dynamic themes
+        bg: 'var(--bg)',
+        'bg-subtle': 'var(--bg-subtle)',
+        'bg-muted': 'var(--bg-muted)',
+        'bg-hover': 'var(--bg-hover)',
+        'bg-active': 'var(--bg-active)',
+        surface: 'var(--surface)',
+        'surface-2': 'var(--surface-2)',
+        border: 'var(--border)',
+        'border-mid': 'var(--border-mid)',
+        'border-strong': 'var(--border-strong)',
+        text: 'var(--text)',
+        'text-2': 'var(--text-2)',
+        'text-3': 'var(--text-3)',
+        'text-4': 'var(--text-4)',
+        'text-inv': 'var(--text-inv)',
+        accent: 'var(--accent)',
+        'accent-2': 'var(--accent-2)',
+        'accent-dim': 'var(--accent-dim)',
+        'accent-mid': 'var(--accent-mid)',
+        'accent-glow': 'var(--accent-glow)',
         // Premium brand custom colors
         brand: {
           50: '#f0f5ff',
@@ -29,6 +50,7 @@ export default {
           800: '#1a328f',
           900: '#1b2d73',
         }
+
       },
       backdropBlur: {
         xs: '2px',

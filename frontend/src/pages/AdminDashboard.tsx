@@ -8,7 +8,11 @@ import { adminApi } from '../services/api';
 import { Analytics, SystemLog } from '../types';
 import { useUIStore } from '../store/uiStore';
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  embedMode?: boolean;
+}
+
+export default function AdminDashboard({ embedMode = false }: AdminDashboardProps) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,37 +50,40 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen px-6 py-8 bg-slate-50 dark:bg-[#080b11] transition-colors duration-300">
+    <div className={embedMode ? "px-0 py-0 bg-transparent transition-colors duration-300" : "min-h-screen px-6 py-8 bg-slate-50 dark:bg-[#080b11] transition-colors duration-300"}>
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <button 
-            onClick={() => setActiveTab('chat')}
-            className="flex items-center text-xs font-semibold text-brand-500 hover:text-brand-600 mb-2 uppercase tracking-widest focus:outline-none"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            Back to Conversational Chat
-          </button>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center">
-            <Cpu className="w-8 h-8 text-brand-500 mr-2 shadow-glow-indigo rounded-lg" />
-            System Control Panel
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Audit system operations, database states, vector search indices, and API tokens
-          </p>
+      {!embedMode && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-5">
+          <div>
+            <button 
+              onClick={() => setActiveTab('chat')}
+              className="flex items-center text-xs font-semibold text-brand-500 hover:text-brand-600 mb-2 uppercase tracking-widest focus:outline-none"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+              Back to Conversational Chat
+            </button>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center">
+              <Cpu className="w-8 h-8 text-brand-500 mr-2 shadow-glow-indigo rounded-lg" />
+              System Control Panel
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Audit system operations, database states, vector search indices, and API tokens
+            </p>
+          </div>
+          
+          <div className="mt-4 md:mt-0">
+            <button 
+              onClick={fetchAdminData}
+              disabled={loading}
+              className="flex items-center px-4 py-2 text-sm font-semibold border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-lg text-slate-700 dark:text-slate-300 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh Control Panel
+            </button>
+          </div>
         </div>
-        
-        <div className="mt-4 md:mt-0">
-          <button 
-            onClick={fetchAdminData}
-            disabled={loading}
-            className="flex items-center px-4 py-2 text-sm font-semibold border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-lg text-slate-700 dark:text-slate-300 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Control Panel
-          </button>
-        </div>
-      </div>
+      )}
+
 
       {loading && !analytics ? (
         <div className="flex flex-col items-center justify-center h-96">
