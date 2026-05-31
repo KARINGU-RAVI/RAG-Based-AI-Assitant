@@ -42,7 +42,6 @@ export default function ChatPage() {
   const [editTitleVal, setEditTitleVal] = useState('');
 
   // AI Generation configuration sliders
-  const [provider, setProvider] = useState<'gemini' | 'openai' | 'claude' | 'mistral'>('gemini');
   const [model, setModel] = useState('Gemini 2.5 Flash');
   const [temperature, setTemperature] = useState(0.2);
   const [topK, setTopK] = useState(5);
@@ -50,6 +49,12 @@ export default function ChatPage() {
   const [chunkSize, setChunkSize] = useState(400);
   const [chunkOverlap, setChunkOverlap] = useState(50);
   const [systemPrompt, setSystemPrompt] = useState('You are an advanced corporate knowledge intelligence assistant. Ground your replies strictly in the retrieved text context segments. Avoid hallucinations.');
+
+  // Gemini API Key & Profile Configuration states
+  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+  const [profileEmail, setProfileEmail] = useState(username ? `${username}@company.com` : 'user@company.com');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Health Stats & Gauges
   const [systemHealthy, setSystemHealthy] = useState(true);
@@ -605,9 +610,14 @@ export default function ChatPage() {
 
                         <div className="absolute right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {isEditing ? (
-                            <button onClick={(e) => saveEditTitle(conv.id, e)} className="p-0.5 rounded text-success hover:bg-success-dim">
-                              <Check className="w-3 h-3" />
-                            </button>
+                            <div className="flex items-center gap-1 z-10">
+                              <button onClick={(e) => saveEditTitle(conv.id, e)} className="p-0.5 rounded text-success hover:bg-success-dim" title="Save Title">
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(null); }} className="p-0.5 rounded text-error hover:bg-error-dim" title="Cancel">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           ) : (
                             <>
                               <button onClick={(e) => startEditTitle(conv.id, conv.title, e)} className="p-0.5 rounded text-text-4 hover:text-text-2" title="Rename">
@@ -917,6 +927,15 @@ export default function ChatPage() {
                                         onChange={(e) => setFeedbackNotes({ ...feedbackNotes, [msg.id]: e.target.value })}
                                         className="w-full px-2 py-1.5 border border-border bg-bg-subtle rounded-lg text-[10.5px] focus:border-accent outline-none text-text-2 font-medium"
                                       />
+                                      <div className="flex justify-end pt-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => setActiveFeedbackId(null)}
+                                          className="px-2.5 py-1 text-[10px] font-bold border border-border hover:bg-bg-hover rounded-lg text-text-3 transition-colors outline-none uppercase tracking-wider"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-3">
@@ -1255,149 +1274,272 @@ export default function ChatPage() {
                 <p className="text-xs text-text-3 mt-0.5">Configure similarity filters, top-K search parameters, and LLM temperature budgets</p>
               </div>
 
-              <div className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm">
+              <div className="space-y-6">
                 
-                {/* Provider Picker */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-text uppercase tracking-wider">Generative Model Provider</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { id: 'gemini', label: 'Gemini', name: 'Gemini 2.5 Flash' },
-                      { id: 'openai', label: 'OpenAI', name: 'GPT-4o Mini' },
-                      { id: 'claude', label: 'Claude', name: 'Claude 3.5 Sonnet' },
-                      { id: 'mistral', label: 'Mistral', name: 'Mistral Large' }
-                    ].map(p => (
+                {/* Panel 1: Google Gemini Parameters Configuration */}
+                <div className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm">
+                  
+                  <div>
+                    <h3 className="text-sm font-bold text-text uppercase tracking-wider mb-1">Google Gemini API Key</h3>
+                    <p className="text-[11px] text-text-3 font-semibold leading-relaxed">
+                      Configure your secure Google Gemini API credentials. Overrides are saved locally in your browser's sandboxed local storage and never transit to third-party logs.
+                    </p>
+                  </div>
+
+                  {/* Gemini Key Input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Google Gemini API Key Override</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        placeholder="Enter secure Gemini API key (E.g. AIzaSy...)"
+                        value={geminiApiKey}
+                        onChange={(e) => setGeminiApiKey(e.target.value)}
+                        className="flex-1 px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono focus:border-accent focus:bg-surface outline-none text-text transition-all placeholder:text-text-4 font-semibold"
+                      />
                       <button
-                        key={p.id}
                         type="button"
                         onClick={() => {
-                          setProvider(p.id as any);
-                          setModel(p.name);
-                          triggerToast(`Provider toggled to ${p.label}`);
+                          localStorage.setItem('gemini_api_key', geminiApiKey);
+                          triggerToast("Google Gemini API Key updated securely");
                         }}
-                        className={`h-9 text-xs font-bold rounded-lg border transition-all ${
-                          provider === p.id 
-                            ? "bg-accent text-text-inv border-accent shadow-sm"
-                            : "bg-surface hover:bg-bg-hover text-text-2 border-border"
-                        }`}
+                        className="px-4 h-9 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
                       >
-                        {p.label}
+                        Apply Key
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Active Model Indicator */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-text-3 uppercase tracking-wider">Active Target LLM</label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={model}
-                      className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-text outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-text-3 uppercase tracking-wider">System Temperature</label>
-                    <div className="flex justify-between items-center h-9 px-3 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-accent">
-                      <span>Budget temp</span>
-                      <span>{temperature}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGeminiApiKey('');
+                          localStorage.removeItem('gemini_api_key');
+                          triggerToast("Gemini API Key override cleared");
+                        }}
+                        className="px-3 h-9 border border-border hover:bg-bg-hover text-xs font-bold rounded-lg text-text-2 transition-all outline-none"
+                        title="Clear API Key override"
+                      >
+                        Clear Override
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                {/* Temperature slider */}
-                <div className="space-y-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={temperature}
-                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-accent"
-                  />
-                  <p className="text-[10px] text-text-4 font-bold uppercase tracking-wider leading-relaxed">
-                    Lower temperature (e.g. 0.2) guarantees maximum factual logic and citation correctness
-                  </p>
-                </div>
+                  {/* Dynamic Gemini active models indicator */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Target Foundation Model</label>
+                      <select
+                        value={model}
+                        onChange={(e) => {
+                          setModel(e.target.value);
+                          triggerToast(`Active model switched to ${e.target.value}`);
+                        }}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-text focus:border-accent outline-none"
+                      >
+                        <option value="Gemini 2.5 Flash">Gemini 2.5 Flash (Factual Speed)</option>
+                        <option value="Gemini 2.5 Pro">Gemini 2.5 Pro (Deep Reasoning)</option>
+                        <option value="Gemini 1.5 Flash">Gemini 1.5 Flash (Legacy Balance)</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Parameters Temperature</label>
+                      <div className="flex justify-between items-center h-9 px-3 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-accent">
+                        <span>Creative budget</span>
+                        <span>{temperature}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Top K and threshold metrics */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+                  {/* Temperature slider */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-text">
-                      <span>Top K context items</span>
-                      <span className="font-mono text-accent">{topK}</span>
-                    </div>
                     <input
                       type="range"
-                      min="1"
-                      max="10"
-                      step="1"
-                      value={topK}
-                      onChange={(e) => setTopK(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-accent"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-text">
-                      <span>Cosine threshold</span>
-                      <span className="font-mono text-accent">{(similarityThreshold * 100).toFixed(0)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.4"
-                      max="0.9"
+                      min="0"
+                      max="1"
                       step="0.05"
-                      value={similarityThreshold}
-                      onChange={(e) => setSimilarityThreshold(parseFloat(e.target.value))}
+                      value={temperature}
+                      onChange={(e) => setTemperature(parseFloat(e.target.value))}
                       className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-accent"
                     />
+                    <p className="text-[10px] text-text-4 font-bold uppercase tracking-wider leading-relaxed">
+                      Lower temperature values guarantee maximum factual precision and strict grounding alignment
+                    </p>
                   </div>
-                </div>
 
-                {/* Chunk Parameter inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-text-3 uppercase tracking-wider">Target segment size (tokens)</label>
-                    <input
-                      type="number"
-                      value={chunkSize}
-                      onChange={(e) => setChunkSize(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold focus:border-accent focus:bg-surface outline-none"
+                  {/* Top K and threshold metrics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-wider text-text">
+                        <span>Top K context segments</span>
+                        <span className="font-mono text-accent">{topK}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={topK}
+                        onChange={(e) => setTopK(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-accent"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-wider text-text">
+                        <span>L2 Cosine similarity cutoff</span>
+                        <span className="font-mono text-accent">{(similarityThreshold * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.4"
+                        max="0.9"
+                        step="0.05"
+                        value={similarityThreshold}
+                        onChange={(e) => setSimilarityThreshold(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-accent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Chunk Parameter inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Segment token limit</label>
+                      <input
+                        type="number"
+                        value={chunkSize}
+                        onChange={(e) => setChunkSize(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold focus:border-accent focus:bg-surface outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Recursive token overlap</label>
+                      <input
+                        type="number"
+                        value={chunkOverlap}
+                        onChange={(e) => setChunkOverlap(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold focus:border-accent focus:bg-surface outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* System Prompt Hardening */}
+                  <div className="space-y-1.5 border-t border-border pt-4">
+                    <label className="block text-[11px] font-bold text-text uppercase tracking-wider font-semibold">System Prompt alignment hardener</label>
+                    <textarea
+                      value={systemPrompt}
+                      onChange={(e) => setSystemPrompt(e.target.value)}
+                      rows={3}
+                      className="w-full p-3 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none resize-none font-medium leading-relaxed text-text-2"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-text-3 uppercase tracking-wider">Segment Overlap (tokens)</label>
-                    <input
-                      type="number"
-                      value={chunkOverlap}
-                      onChange={(e) => setChunkOverlap(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold focus:border-accent focus:bg-surface outline-none"
-                    />
+
+                  <div className="border-t border-border pt-4 flex justify-end">
+                    <button 
+                      onClick={() => triggerToast("AI configuration applied successfully")}
+                      className="h-9 px-5 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
+                    >
+                      Save Configuration
+                    </button>
                   </div>
                 </div>
 
-                {/* System Prompt Hardening */}
-                <div className="space-y-1.5 border-t border-border pt-4">
-                  <label className="block text-xs font-bold text-text uppercase tracking-wider">System Prompt Hardener</label>
-                  <textarea
-                    value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)}
-                    rows={3}
-                    className="w-full p-3 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none resize-none font-medium leading-relaxed text-text-2"
-                  />
+                {/* Panel 2: Profile & Account Configurations */}
+                <div className="p-6 border border-border rounded-xl bg-surface space-y-6 shadow-sm">
+                  <div>
+                    <h3 className="text-sm font-bold text-text uppercase tracking-wider mb-1">Profile & Account Settings</h3>
+                    <p className="text-[11px] text-text-3 font-semibold leading-relaxed">
+                      Update your workspace account identity, email coordinates, or authenticate system credentials.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Logged Username</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={username || 'System User'}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-text outline-none opacity-60 select-none"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Workspace Role</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={(role || 'user') + ' access'}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs font-mono font-bold text-text outline-none opacity-60 select-none uppercase"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-border pt-4">
+                    <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Editable Contact Email</label>
+                    <input
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      placeholder="Enter contact email address..."
+                      className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none text-text transition-all font-semibold"
+                    />
+                  </div>
+
+                  {/* Password reset input boxes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">New Password Key</label>
+                      <input
+                        type="password"
+                        placeholder="Min 6 characters..."
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none text-text transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-text-3 uppercase tracking-wider">Confirm Password Key</label>
+                      <input
+                        type="password"
+                        placeholder="Re-enter password..."
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-3 h-9 rounded-lg border border-border bg-bg-subtle text-xs focus:border-accent focus:bg-surface outline-none text-text transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4 flex justify-end gap-3.5 select-none">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setProfileEmail(username ? `${username}@company.com` : 'user@company.com');
+                        setNewPassword('');
+                        setConfirmPassword('');
+                        triggerToast("Profile edits reset successfully");
+                      }}
+                      className="h-9 px-4 border border-border hover:bg-bg-hover rounded-lg text-text-2 text-xs font-bold transition-all outline-none"
+                    >
+                      Cancel Profile Changes
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (newPassword && newPassword !== confirmPassword) {
+                          alert("New Password and Confirm Password fields must match perfectly.");
+                          return;
+                        }
+                        triggerToast("Workspace Profile Configurations saved successfully!");
+                        setNewPassword('');
+                        setConfirmPassword('');
+                      }}
+                      className="h-9 px-5 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
+                    >
+                      Save Profile & Account
+                    </button>
+                  </div>
                 </div>
 
-                <div className="border-t border-border pt-4 flex justify-end">
-                  <button 
-                    onClick={() => triggerToast("AI configuration applied successfully")}
-                    className="h-9 px-5 bg-text text-bg hover:bg-text-2 active:scale-98 text-xs font-bold rounded-lg shadow-sm transition-all outline-none"
-                  >
-                    Save Configurations
-                  </button>
-                </div>
               </div>
 
             </div>
@@ -1685,12 +1827,20 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedSource(null)}
-                className="w-full py-2.5 mt-5 text-[10px] font-bold border border-border hover:bg-bg-hover rounded-xl text-text-2 transition-colors focus:outline-none uppercase tracking-wider shrink-0 outline-none"
-              >
-                Close Citation
-              </button>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setSelectedSource(null)}
+                  className="flex-1 py-2.5 text-[10px] font-bold border border-border hover:bg-bg-hover rounded-xl text-text-2 transition-colors focus:outline-none uppercase tracking-wider outline-none"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setSelectedSource(null)}
+                  className="flex-1 py-2.5 text-[10px] font-bold bg-text text-bg hover:bg-text-2 rounded-xl transition-colors focus:outline-none uppercase tracking-wider outline-none"
+                >
+                  Close Citation
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
