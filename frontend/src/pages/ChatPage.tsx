@@ -939,12 +939,12 @@ export default function ChatPage() {
                         )}
                         
                         <div className="group max-w-[82%]">
-                          <div className={`p-4.5 rounded-2xl text-xs md:text-sm leading-relaxed border transition-all ${
+                          <div className={`px-6 py-3.5 rounded-2xl text-[13px] md:text-sm leading-relaxed border transition-all ${
                             isUser 
-                              ? 'bg-text text-bg border-text/10 rounded-tr-none shadow-sm' 
+                              ? 'bg-accent text-white border-accent rounded-tr-sm shadow-sm shadow-accent/20' 
                               : isError 
-                              ? 'bg-error-dim text-error border-error/20 rounded-tl-none font-medium'
-                              : 'bg-surface text-text border-border rounded-tl-none shadow-sm'
+                              ? 'bg-error-dim text-error border-error/20 rounded-tl-sm font-medium'
+                              : 'bg-surface text-text border-border rounded-tl-sm shadow-sm'
                           }`}>
                             
                             {/* ReactMarkdown custom renderers */}
