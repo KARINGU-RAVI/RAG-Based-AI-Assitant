@@ -261,6 +261,132 @@ export default function AdminDashboard({ embedMode = false }: AdminDashboardProp
 
           </div>
 
+          {/* Row 2 of SVG Reports: Bar Chart & Donut Chart */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Chart 3: Token Expenditure Bar Chart */}
+            <div className="p-5 border border-border bg-surface rounded-xl shadow-sm select-none perspective-1000 preserve-3d card-3d">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-xs font-bold text-text uppercase tracking-wider">Token Consumption per Hour</h4>
+                  <p className="text-[10px] text-text-3 font-semibold mt-0.5">Generative completion expenditures over past 6 hours</p>
+                </div>
+                <span className="px-2 py-0.5 bg-warning-dim text-warning border border-warning/15 rounded text-[9.5px] font-mono font-extrabold">Active</span>
+              </div>
+              
+              {/* Responsive SVG Bar Chart */}
+              <div className="h-44 w-full flex items-end">
+                <svg className="w-full h-full" viewBox="0 0 500 160">
+                  {/* Grid Lines */}
+                  <line x1="0" y1="40" x2="500" y2="40" stroke="var(--border)" strokeWidth="1" strokeDasharray="3" />
+                  <line x1="0" y1="80" x2="500" y2="80" stroke="var(--border)" strokeWidth="1" strokeDasharray="3" />
+                  <line x1="0" y1="120" x2="500" y2="120" stroke="var(--border)" strokeWidth="1" strokeDasharray="3" />
+                  
+                  {/* Bars (Vertical Columns) */}
+                  {[
+                    { label: "12:00", value: 12000, height: 90, x: 30, color: "var(--accent)" },
+                    { label: "13:00", value: 18000, height: 120, x: 110, color: "var(--success)" },
+                    { label: "14:00", value: 6000, height: 50, x: 190, color: "var(--info)" },
+                    { label: "15:00", value: 14000, height: 100, x: 270, color: "var(--warning)" },
+                    { label: "16:00", value: 22000, height: 135, x: 350, color: "var(--error)" },
+                    { label: "17:00", value: 9000, height: 70, x: 430, color: "var(--accent)" }
+                  ].map((bar, i) => (
+                    <g key={i}>
+                      {/* Bar columns */}
+                      <rect 
+                        x={bar.x} 
+                        y={140 - bar.height} 
+                        width="40" 
+                        height={bar.height} 
+                        rx="4" 
+                        fill={bar.color} 
+                        opacity="0.85" 
+                        className="hover:opacity-100 transition-opacity cursor-pointer animate-pulse"
+                      />
+                      {/* Value label */}
+                      <text 
+                        x={bar.x + 20} 
+                        y={130 - bar.height} 
+                        textAnchor="middle" 
+                        className="text-[9px] font-mono font-bold fill-text"
+                      >
+                        {(bar.value / 1000).toFixed(0)}k
+                      </text>
+                      {/* X Axis Label */}
+                      <text 
+                        x={bar.x + 20} 
+                        y="155" 
+                        textAnchor="middle" 
+                        className="text-[9px] font-semibold fill-text-3"
+                      >
+                        {bar.label}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            </div>
+
+            {/* Chart 4: Similarity Matching Confidence Level Donut Chart */}
+            <div className="p-5 border border-border bg-surface rounded-xl shadow-sm select-none perspective-1000 preserve-3d card-3d">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-xs font-bold text-text uppercase tracking-wider">Grounding Confidence Distribution</h4>
+                  <p className="text-[10px] text-text-3 font-semibold mt-0.5">Excerpts matching similarity parameters breakdown</p>
+                </div>
+                <span className="px-2 py-0.5 bg-info-dim text-info border border-info-dim rounded text-[9.5px] font-mono font-extrabold">Audit</span>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-around h-44 gap-4">
+                {/* SVG Donut Chart */}
+                <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border)" strokeWidth="3" />
+                    
+                    {/* Segment 1: High Confidence (55%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--success)" strokeWidth="3.5"
+                      strokeDasharray="55 100"
+                      strokeDashoffset="0"
+                      strokeLinecap="round"
+                    />
+                    {/* Segment 2: Medium Confidence (30%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--warning)" strokeWidth="3.5"
+                      strokeDasharray="30 100"
+                      strokeDashoffset="-55"
+                      strokeLinecap="round"
+                    />
+                    {/* Segment 3: Low Confidence (15%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--error)" strokeWidth="3.5"
+                      strokeDasharray="15 100"
+                      strokeDashoffset="-85"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute text-center select-none">
+                    <span className="block text-[15px] font-black text-text leading-none">RAG</span>
+                    <span className="block text-[8px] font-extrabold text-text-4 uppercase mt-0.5 tracking-widest">Grounding</span>
+                  </div>
+                </div>
+
+                {/* Donut Legend */}
+                <div className="space-y-2.5 font-sans">
+                  {[
+                    { label: "High Confidence (>= 75%)", percent: "55%", color: "bg-success" },
+                    { label: "Medium Match (55% - 74%)", percent: "30%", color: "bg-warning" },
+                    { label: "Low Match (< 55%)", percent: "15%", color: "bg-error" }
+                  ].map((legend, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs font-semibold text-text-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${legend.color} shrink-0`} />
+                      <span className="truncate max-w-[140px]">{legend.label}</span>
+                      <span className="ml-auto font-mono text-text font-bold">{legend.percent}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
           {/* System Audit Logs Section */}
           <div className="p-5 border border-border bg-surface rounded-xl shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 select-none">

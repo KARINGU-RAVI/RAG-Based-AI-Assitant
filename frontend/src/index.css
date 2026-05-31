@@ -47,32 +47,32 @@
 }
 
 .dark {
-  /* Premium Dark Theme (Zinc / Obsidian style) */
-  --bg:              #09090B;
-  --bg-subtle:       #0E0E11;
-  --bg-muted:        #18181B;
-  --bg-hover:        #18181B;
-  --bg-active:       #27272A;
-  --surface:         #09090B;
-  --surface-2:       #0E0E11;
-  --sidebar-bg:      #0B0B0E;
+  /* Premium Dark Theme — Cyber-Orchid / Midnight-Magenta cyberpunk premium style */
+  --bg:              #08020D; /* midnight obsidian violet */
+  --bg-subtle:       #10051B; /* deep magenta-violet */
+  --bg-muted:        #1D0B2E;
+  --bg-hover:        #260E3D;
+  --bg-active:       #351354;
+  --surface:         #0C0314;
+  --surface-2:       #12061E;
+  --sidebar-bg:      #06010B; /* extra deep velvet black-violet sidebar */
 
-  --border:          #1F1F23;
-  --border-mid:      #27272A;
-  --border-strong:   #3F3F46;
+  --border:          #250F3A;
+  --border-mid:      #3B1A5C;
+  --border-strong:   #5D2A8E;
 
-  --text:            #FAFAFA;
-  --text-2:          #E4E4E7;
-  --text-3:          #A1A1AA;
-  --text-4:          #71717A;
-  --text-inv:        #09090B;
+  --text:            #FFF0F6; /* stark rose-white */
+  --text-2:          #FFD3E5; /* soft light pink-white */
+  --text-3:          #E5C2D3; /* greyish rose-white */
+  --text-4:          #8F6E80; /* subtle orchid grey */
+  --text-inv:        #06010B;
 
-  /* Accent — Indigo (with slight scaling glow in dark mode) */
-  --accent:          #6366F1;
-  --accent-hover:    #4F46E5;
-  --accent-dim:      rgba(99, 102, 241, 0.12);
-  --accent-mid:      rgba(99, 102, 241, 0.22);
-  --accent-glow:     rgba(99, 102, 241, 0.3);
+  /* Accent — Vibrant Neon Orchid Pink */
+  --accent:          #F472B6;
+  --accent-hover:    #EC4899;
+  --accent-dim:      rgba(244, 114, 182, 0.12);
+  --accent-mid:      rgba(244, 114, 182, 0.22);
+  --accent-glow:     rgba(244, 114, 182, 0.35);
 
   /* Semantic States */
   --success:         #34D399;
@@ -85,9 +85,9 @@
   --info-dim:        rgba(96, 165, 250, 0.1);
 
   /* Elevation Shadows */
-  --shadow-sm:       0 1px 2px 0 rgba(0, 0, 0, 0.2);
-  --shadow-md:       0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.26);
-  --shadow-lg:       0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-sm:       0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md:       0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg:       0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
 }
 
 @layer base {
@@ -179,4 +179,37 @@
 /* Glow Shadow extensions */
 .shadow-glow-indigo {
   box-shadow: 0 0 16px rgba(99, 102, 241, 0.08);
+}
+
+/* Custom 3D Perspective and Card Hover Classes */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.card-3d {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg) translateZ(8px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.04), 0 0 20px rgba(99, 102, 241, 0.12);
+}
+
+.dark .card-3d:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg) translateZ(8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), 0 0 24px rgba(99, 102, 241, 0.22);
+}
+
+/* Custom Avatar "ravi" text offset shadow from image */
+.avatar-text-glitch {
+  text-shadow: 1px 1px 0px rgba(99, 102, 241, 0.7), -1px -1px 0px rgba(245, 158, 11, 0.7);
 }
