@@ -19,3 +19,6 @@ class AnalyticsResponse(BaseModel):
     total_messages: int
     average_similarity_score: float
     total_tokens_used: int
+
+class SystemSettings(BaseModel):
+    GEMINI_API_KEY: str

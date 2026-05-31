@@ -63,3 +63,7 @@ export interface Analytics {
   average_similarity_score: number;
   total_tokens_used: number;
 }
+
+export interface SystemSettings {
+  GEMINI_API_KEY: string;
+}

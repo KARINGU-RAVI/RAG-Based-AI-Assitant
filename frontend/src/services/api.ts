@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-import { User, Document, Conversation, Message, SystemLog, Analytics, SourceCitation } from '../types';
+import { User, Document, Conversation, Message, SystemLog, Analytics, SourceCitation, SystemSettings } from '../types';
 
 // Create central Axios instance
 export const apiClient = axios.create({
@@ -78,6 +78,14 @@ export const adminApi = {
   },
   getAnalytics: async (): Promise<Analytics> => {
     const res = await apiClient.get('/api/v1/admin/analytics');
+    return res.data;
+  },
+  getSettings: async (): Promise<SystemSettings> => {
+    const res = await apiClient.get('/api/v1/admin/settings');
+    return res.data;
+  },
+  updateSettings: async (settings: SystemSettings): Promise<SystemSettings> => {
+    const res = await apiClient.post('/api/v1/admin/settings', settings);
     return res.data;
   }
 };

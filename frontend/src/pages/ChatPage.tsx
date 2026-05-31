@@ -19,19 +19,19 @@ import { chatApi, documentsApi, systemApi, streamChat } from '../services/api';
 import { Conversation, Message, Document, SourceCitation } from '../types';
 import AdminDashboard from './AdminDashboard';
 
-function RaviAvatar({ collapsed = false }: { collapsed?: boolean }) {
+function UserAvatar({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <div className="flex items-center select-none cursor-pointer gap-2 hover:opacity-90 active:scale-98 transition-all shrink-0">
       {/* Circular silhouette with pink-purple-indigo gradient border */}
       <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 p-0.5 flex items-center justify-center shadow-md shrink-0">
-        <div className="w-full h-full rounded-full bg-[#0E0616] flex items-center justify-center text-xs font-black text-[#c084fc] font-sans shadow-inner">
-          R
+        <div className="w-full h-full rounded-full bg-[#0E0616] flex items-center justify-center text-xs font-black text-[#c084fc] font-sans shadow-inner uppercase">
+          {useAuthStore.getState().username?.charAt(0) || 'U'}
         </div>
       </div>
       {!collapsed && (
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xs font-black text-text tracking-wide font-sans capitalize">
-            Ravi
+            {useAuthStore.getState().username || 'User'}
           </span>
           <svg className="w-3 h-3 text-[#71717a] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
@@ -556,8 +556,8 @@ export default function ChatPage() {
           <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
           
           <div ref={profileMenuRef} className="relative font-sans shrink-0">
-            <div 
-              className="flex items-center cursor-pointer select-none" 
+            <button 
+              className="flex items-center cursor-pointer select-none outline-none" 
               onClick={() => {
                 const willOpen = !topProfileMenuOpen;
                 setTopProfileMenuOpen(willOpen);
@@ -566,8 +566,8 @@ export default function ChatPage() {
                 }
               }}
             >
-              <RaviAvatar collapsed={false} />
-            </div>
+              <UserAvatar collapsed={false} />
+            </button>
             
             <AnimatePresence>
               {topProfileMenuOpen && (
@@ -580,7 +580,7 @@ export default function ChatPage() {
                 >
                   <div className="px-2.5 py-1.5 border-b border-border mb-1 select-none text-left">
                     <span className="block text-[9px] font-black text-text-4 uppercase tracking-widest">Signed in as</span>
-                    <span className="block text-xs font-black text-text truncate mt-0.5">{username || 'ravi'}</span>
+                    <span className="block text-xs font-black text-text truncate mt-0.5">{username || 'User'}</span>
                   </div>
                   
                   <button
