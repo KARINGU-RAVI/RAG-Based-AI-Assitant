@@ -939,7 +939,7 @@ export default function ChatPage() {
                         )}
                         
                         <div className="group max-w-[82%]">
-                          <div className={`px-5 py-4 rounded-2xl text-[13px] md:text-sm leading-relaxed border transition-all ${
+                          <div className={`px-6 py-3.5 rounded-2xl text-[13px] md:text-sm leading-relaxed border transition-all ${
                             isUser 
                               ? 'bg-accent text-white border-accent rounded-tr-sm shadow-sm shadow-accent/20' 
                               : isError 
