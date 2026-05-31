@@ -8,15 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep modern dark colors
-        dark: {
-          bg: "#0b0f19",
-          card: "rgba(17, 24, 39, 0.7)",
-          border: "rgba(255, 255, 255, 0.08)",
-          accent: "#3b82f6",
-          text: "#f3f4f6"
-        },
-        // Mapped CSS variables for dynamic themes
+        // Mapped CSS variables for premium themes
         bg: 'var(--bg)',
         'bg-subtle': 'var(--bg-subtle)',
         'bg-muted': 'var(--bg-muted)',
@@ -24,6 +16,7 @@ export default {
         'bg-active': 'var(--bg-active)',
         surface: 'var(--surface)',
         'surface-2': 'var(--surface-2)',
+        'sidebar-bg': 'var(--sidebar-bg)',
         border: 'var(--border)',
         'border-mid': 'var(--border-mid)',
         'border-strong': 'var(--border-strong)',
@@ -33,11 +26,18 @@ export default {
         'text-4': 'var(--text-4)',
         'text-inv': 'var(--text-inv)',
         accent: 'var(--accent)',
-        'accent-2': 'var(--accent-2)',
+        'accent-hover': 'var(--accent-hover)',
         'accent-dim': 'var(--accent-dim)',
         'accent-mid': 'var(--accent-mid)',
         'accent-glow': 'var(--accent-glow)',
-        // Premium brand custom colors
+        success: 'var(--success)',
+        'success-dim': 'var(--success-dim)',
+        warning: 'var(--warning)',
+        'warning-dim': 'var(--warning-dim)',
+        error: 'var(--error)',
+        'error-dim': 'var(--error-dim)',
+        info: 'var(--info)',
+        'info-dim': 'var(--info-dim)',
         brand: {
           50: '#f0f5ff',
           100: '#e0ebff',
